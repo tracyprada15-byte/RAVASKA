@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAVASKA</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101321;color:white;font-family:Arial,sans-serif;text-align:center}
+h1{color:#72B910;letter-spacing:5px;margin:12px}
+#contenedor{width:min(100%,1100px);margin:auto;padding:clamp(5px,2vw,14px)}
+#hud{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:9px;font-size:clamp(11px,2.5vw,16px);font-weight:bold;background:#171b2b}
+#zona{position:relative;width:100%;border:3px solid #66B4FC;border-radius:10px;overflow:hidden;background:#07194f}
+canvas{width:100%;height:auto;aspect-ratio:16/9;display:block;image-rendering:pixelated;max-height:calc(100dvh - 190px)}
+#panel{position:absolute;inset:0;display:grid;place-items:center;background:#080b18c9;padding:15px}
+#panel.oculto{display:none}
+.tarjeta{background:#171b2b;border:2px solid #72B910;border-radius:12px;padding:20px;max-width:420px}
+#ayuda{color:#ccc;font-size:13px}
+button{background:#72B910;color:#111;border:0;border-radius:8px;padding:12px 18px;margin:5px;font-weight:bold;cursor:pointer;touch-action:manipulation;min-width:44px;min-height:42px}
+@media(max-width:600px){
+h1{font-size:clamp(20px,6vw,30px);letter-spacing:2px}
+#contenedor{padding:4px}
+#zona{border-width:2px;border-radius:6px}
+#hud{padding:7px 5px;font-size:12px}
+#ayuda{font-size:11px;padding:0 8px}
+button{padding:11px 12px;margin:3px;font-size:12px}
+.tarjeta{padding:14px;max-width:94vw}
+.tarjeta h2{font-size:17px}
+}
+</style>
+</head>
+<body>
+<h1>RAVASKA</h1>
+<div id="contenedor">
+  <div id="hud">
+    <span id="estado">❤️ 3 | 🪙 0</span>
+    <span id="meta">NIVEL 1 · META: 820 m</span>
+  </div>
+  <div id="zona">
+    <canvas id="juego" width="800" height="450"></canvas>
+    <div id="panel">
+      <div class="tarjeta">
+        <h2 id="titulo">RUMBO AL BOULEVARD</h2>
+        <p id="mensaje">Recorre Iquitos, supera a los villanos y llega al Boulevard.</p>
+        <button id="iniciar">COMENZAR AVENTURA</button>
+      </div>
+    </div>
+  </div>
+  <p id="ayuda">A / D o ← / → mover · ESPACIO saltar · Z disparar</p>
+  <div id="controles">
+    <button id="izquierda">◀</button>
+    <button id="saltar">SALTAR</button>
+    <button id="disparar">DISPARAR</button>
+    <button id="derecha">▶</button>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 1. CONFIGURACIÓN
+// ==========================================
+const canvas=document.getElementById("juego");
+const ctx=canvas.getContext("2d");
+const W=800,H=450;
+ctx.imageSmoothingEnabled=false;
+
+const META=820;
+const META_NIVEL2=820;
+const INICIO_TRANSICION=818;
+const DURACION_TRANSICION=75;
+const GRAVEDAD=0.55;
+const FUERZA_SALTO=-11.5;
+const MAX_VIDAS=3;
+let nivel=1;
+
+// ==========================================
+// 2. CARGA DE IMÁGENES
+// ==========================================
+function cargarImagen(ruta){
+  const img=new Image();
+  img.src=ruta;
+  return img;
+}
+
+const fondo=cargarImagen("fondo_original.webp");
+const fondoNivel2=cargarImagen("../assets/fondo-nivel2.webp");
+const fondoEntrada=cargarImagen("../assets/boulevard-final.webp");
+const fondoFinal=cargarImagen("../assets/boulevard-meta-final-nivel1.webp");
+
+// NUEVA IMAGEN DE LA META DEL NIVEL 2
+const fondoFinalNivel2=cargarImagen("../assets/Cine-meta-final-nivel2.webp");
+
+const spritesCelebracion=[];
+for(let i=0;i<16;i++)spritesCelebracion.push(cargarImagen("../assets/celebracion"+i+".webp"));
+
+const mascotas=[];
+for(let i=0;i<15;i++)mascotas.push(cargarImagen("../assets/sprite-mascota"+i+".webp"));
+
+const villanoImagenes={
+  quieto:cargarImagen("../assets/villano-sprite0.webp"),
+  correr:[
+    cargarImagen("../assets/villano-sprite-corriendo1.webp"),
+    cargarImagen("../assets/villano-sprite-corriendo2.webp"),
+    cargarImagen("../assets/villano-sprite-corriendo3.webp")
+  ],
+  saltar:[
+    cargarImagen("../assets/villano-sprite-saltando1.webp"),
+    cargarImagen("../assets/villano-sprite-saltando2.webp")
+  ],
+  herido:[
+    cargarImagen("../assets/villano-sprite-herido1.webp"),
+    cargarImagen("../assets/villano-sprite-herido2.webp")
+  ],
+  muerte:[
+    cargarImagen("../assets/villano-sprite-muerte1.webp"),
+    cargarImagen("../assets/villano-sprite-muerte2.webp"),
+    cargarImagen("../assets/villano-sprite-muerte3.webp"),
+    cargarImagen("../assets/villano-sprite-muerte4.webp"),
+    cargarImagen("../assets/villano-sprite-muerte5.webp")
+  ]
+};
+
+const imagenMoneda=cargarImagen("../assets/moneda-sprite.webp");
+const sprites=[];
+for(let i=0;i<16;i++)sprites.push(cargarImagen("sprites/sprite"+i+".webp"));
+
+const spritesDisparo=[];
+for(let i=0;i<4;i++)spritesDisparo.push(cargarImagen("../assets/disparo"+i+".webp"));
+
+// ==========================================
+// 3. ANIMACIONES DE TRACY
+// ==========================================
+const animaciones={
+  quieto:[0,1,2,3],
+  correr:[4,5,6,7,8,9,10,11,12],
+  saltar:[10,11,12],
+  deslizar:[13,14,15]
+};
+
+let animacionActual="quieto";
+let indiceAnimacion=0;
+let relojAnimacion=0;
+let disparando=false;
+let indiceDisparo=0;
+let relojDisparo=0;
+
+function cambiarAnimacion(nombre){
+  if(animacionActual!==nombre){
+    animacionActual=nombre;
+    indiceAnimacion=0;
+    relojAnimacion=0;
+  }
+}
+
+function obtenerImagenJugador(){
+  if(disparando){
+    const img=spritesDisparo[indiceDisparo];
+    if(img&&img.complete&&img.naturalWidth>0)return img;
+  }
+  return sprites[animaciones[animacionActual][indiceAnimacion]];
+}
+
+function actualizarAnimacionDisparo(){
+  if(!disparando)return;
+  relojDisparo++;
+  if(relojDisparo>=5){
+    relojDisparo=0;
+    indiceDisparo++;
+    if(indiceDisparo>=spritesDisparo.length){
+      disparando=false;
+      indiceDisparo=0;
+    }
+  }
+}
+
+function iniciarAnimacionDisparo(){
+  if(!jugando)return;
+  disparando=true;
+  indiceDisparo=0;
+  relojDisparo=0;
+}
+
+// ==========================================
+// 4. JUGADOR
+// ==========================================
+let jugador={};
+
+function reiniciarJugador(){
+  jugador={
+    x:120,y:365,ancho:65,alto:108,
+    velocidadX:0,velocidadY:0,
+    suelo:true,saltos:0,
+    vidas:3,monedas:0,invulnerable:0
+  };
+}
+reiniciarJugador();
+
+// ==========================================
+// 5. VARIABLES GENERALES
+// ==========================================
+let jugando=false,tiempo=0,distancia=0,camara=0;
+let faseFinal="ninguna",progresoFinal=0;
+let indiceCelebracion=0,relojCelebracion=0;
+
+// VARIABLES EXCLUSIVAS DEL FINAL DEL NIVEL 2
+let progresoFinalNivel2=0;
+let relojFinalNivel2=0;
+
+let enemigos=[],balas=[],monedas=[],corazones=[],plataformas=[];
+let teclas={},teclaDisparoActiva=false;
+let relojMascota=0,indiceMascota=0;
+
+// ==========================================
+// 6. RECTÁNGULO DE TRACY
+// ==========================================
+function obtenerRectanguloJugador(){
+  const imagen=obtenerImagenJugador();
+  if(imagen&&imagen.complete&&imagen.naturalWidth>0){
+    const escala=jugador.alto/imagen.naturalHeight;
+    const ancho=imagen.naturalWidth*escala;
+    return{
+      x:jugador.x+(jugador.ancho-ancho)/2,
+      y:jugador.y-jugador.alto,
+      ancho:ancho,alto:jugador.alto
+    };
+  }
+  return{x:jugador.x,y:jugador.y-70,ancho:35,alto:70};
+}
+
+// ==========================================
+// 7. DIBUJAR TRACY
+// ==========================================
+function dibujarJugador(){
+  if(disparando){
+    actualizarAnimacionDisparo();
+  }else{
+    let nombre="quieto";
+    if(!jugador.suelo)nombre="saltar";
+    else if(Math.abs(jugador.velocidadX)>0.1)nombre="correr";
+    cambiarAnimacion(nombre);
+    const lista=animaciones[animacionActual];
+    relojAnimacion++;
+    if(relojAnimacion>=7){
+      relojAnimacion=0;
+      indiceAnimacion=(indiceAnimacion+1)%lista.length;
+    }
+  }
+
+  const cuerpo=obtenerRectanguloJugador();
+  const imagen=obtenerImagenJugador();
+
+  if(imagen&&imagen.complete&&imagen.naturalWidth>0){
+    ctx.drawImage(imagen,cuerpo.x-camara,cuerpo.y,cuerpo.ancho,cuerpo.alto);
+  }else{
+    ctx.fillStyle="#72B910";
+    ctx.fillRect(cuerpo.x-camara,cuerpo.y,cuerpo.ancho,cuerpo.alto);
+  }
+}
+
+// ==========================================
+// 8. MASCOTA
+// ==========================================
+function dibujarMascota(){
+  relojMascota++;
+  if(relojMascota>=8){
+    relojMascota=0;
+    indiceMascota=(indiceMascota+1)%mascotas.length;
+  }
+  const imagen=mascotas[indiceMascota];
+  if(!imagen||!imagen.complete||imagen.naturalWidth===0)return;
+  ctx.drawImage(imagen,jugador.x-camara-55,jugador.y-55,55,48);
+}
+
+// ==========================================
+// 9. FONDOS DE LOS NIVELES
+// ==========================================
+function dibujarImagenCubierta(imagen){
+  if(!imagen||!imagen.complete||imagen.naturalWidth===0)return false;
+  const escala=Math.max(W/imagen.naturalWidth,H/imagen.naturalHeight);
+  const ancho=imagen.naturalWidth*escala;
+  const alto=imagen.naturalHeight*escala;
+  ctx.drawImage(imagen,(W-ancho)/2,(H-alto)/2,ancho,alto);
+  return true;
+}
+
+function dibujarFondo(){
+  // NIVEL 2: NUEVO PARQUE NOCTURNO PIXEL ART
+  if(nivel===2){
+    if(fondoNivel2.complete&&fondoNivel2.naturalWidth>0){
+      const escala=Math.max(
+        W/fondoNivel2.naturalWidth,
+        H/fondoNivel2.naturalHeight
+      );
+
+      const ancho=fondoNivel2.naturalWidth*escala;
+      const alto=fondoNivel2.naturalHeight*escala;
+
+      // Movimiento lento para dar profundidad al escenario.
+      const movimiento=Math.min(
+        ancho-W,
+        camara*0.12
+      );
+
+      ctx.drawImage(
+        fondoNivel2,
+        -movimiento,
+        (H-alto)/2,
+        ancho,
+        alto
+      );
+    }else{
+      ctx.fillStyle="#07132c";
+      ctx.fillRect(0,0,W,H);
+    }
+    return;
+  }
+
+  // NIVEL 1: FONDO ORIGINAL
+  if(fondo.complete&&fondo.naturalWidth>0){
+    const escala=H/fondo.naturalHeight;
+    const ancho=fondo.naturalWidth*escala;
+    const desplazamiento=(camara*0.25)%ancho;
+    ctx.drawImage(fondo,-desplazamiento,0,ancho,H);
+    ctx.drawImage(fondo,ancho-desplazamiento,0,ancho,H);
+  }else{
+    ctx.fillStyle="#07194f";
+    ctx.fillRect(0,0,W,H);
+  }
+
+  ctx.fillStyle="#292b43";
+  ctx.fillRect(0,365,W,85);
+  ctx.fillStyle="#f8e6a0";
+
+  for(let i=0;i<12;i++){
+    let x=(i*100-camara*1.5)%W;
+    if(x<0)x+=W;
+    ctx.fillRect(x,415,45,4);
+  }
+}
+
+// ==========================================
+// 10. TRANSICIÓN AL BOULEVARD
+// ==========================================
+function dibujarTransicionBoulevard(){
+  dibujarFondo();
+
+  if(fondoEntrada.complete&&fondoEntrada.naturalWidth>0){
+    const progreso=Math.max(0,Math.min(1,progresoFinal));
+    const suavizado=progreso*progreso*(3-2*progreso);
+    ctx.save();
+    ctx.globalAlpha=suavizado;
+    dibujarImagenCubierta(fondoEntrada);
+    ctx.restore();
+  }
+
+  dibujarMonedas();
+  enemigos.forEach(dibujarVillano);
+  dibujarMascota();
+  dibujarJugador();
+  dibujarBalas();
+}
+
+// ==========================================
+// 11. VILLANOS
+// ==========================================
+function crearVillano(){
+  let posicionX=nivel===2?camara+W+70:jugador.x+550;
+  enemigos.push({
+    x:posicionX,y:365,
+    velocidad:nivel===2?3.2:2,
+    estado:"correr",indice:0,reloj:0,muerteTiempo:0
+  });
+}
+
+function obtenerImagenVillano(e){
+  let lista;
+  if(e.estado==="muerte")lista=villanoImagenes.muerte;
+  else if(e.estado==="herido")lista=villanoImagenes.herido;
+  else if(e.estado==="saltar")lista=villanoImagenes.saltar;
+  else lista=villanoImagenes.correr;
+  return Array.isArray(lista)?lista[e.indice]:lista;
+}
+
+function dibujarVillano(e){
+  const imagen=obtenerImagenVillano(e);
+  if(!imagen||!imagen.complete||imagen.naturalWidth===0)return;
+  const altura=e.estado==="muerte"?65:88;
+  const escala=altura/imagen.naturalHeight;
+  const ancho=imagen.naturalWidth*escala;
+  const x=e.x-camara-ancho/2;
+  const y=e.y-altura;
+  ctx.save();
+  ctx.translate(x+ancho,0);
+  ctx.scale(-1,1);
+  ctx.drawImage(imagen,0,y,ancho,altura);
+  ctx.restore();
+}
+
+function animarVillano(e){
+  e.reloj++;
+  if(e.estado==="muerte"){
+    if(e.reloj>=7){
+      e.reloj=0;
+      e.indice++;
+      if(e.indice>=villanoImagenes.muerte.length)e.muerteTiempo=1;
+    }
+    return;
+  }
+  if(e.estado==="herido"){
+    if(e.reloj>=9){
+      e.reloj=0;
+      e.indice++;
+      if(e.indice>=villanoImagenes.herido.length){
+        e.estado="muerte";e.indice=0;
+      }
+    }
+    return;
+  }
+  if(e.reloj>=9){
+    e.reloj=0;
+    e.indice=(e.indice+1)%3;
+  }
+}
+
+// ==========================================
+// 12. DISPAROS
+// ==========================================
+function disparar(){
+  if(!jugando)return;
+  iniciarAnimacionDisparo();
+  const cuerpo=obtenerRectanguloJugador();
+  balas.push({
+    mundoX:cuerpo.x+cuerpo.ancho*0.92,
+    y:cuerpo.y+cuerpo.alto*0.47,
+    velocidad:12
+  });
+}
+
+function dibujarBalas(){
+  balas.forEach(b=>{
+    const x=b.mundoX-camara;
+    ctx.fillStyle="#FEE208";
+    ctx.fillRect(x,b.y,15,5);
+    ctx.fillStyle="#fff5b0";
+    ctx.fillRect(x+10,b.y-2,5,9);
+  });
+}
+
+// ==========================================
+// 13. MONEDAS
+// ==========================================
+function crearMoneda(){
+  monedas.push({
+    x:camara+W+Math.random()*100,
+    y:260+Math.random()*65,
+    recogida:false
+  });
+}
+
+function dibujarMonedas(){
+  monedas.forEach(m=>{
+    if(m.recogida)return;
+    const x=m.x-camara;
+    if(imagenMoneda.complete&&imagenMoneda.naturalWidth>0){
+      ctx.drawImage(imagenMoneda,x-14,m.y-15,28,30);
+    }else{
+      ctx.fillStyle="#FEE208";
+      ctx.beginPath();
+      ctx.arc(x,m.y,10,0,Math.PI*2);
+      ctx.fill();
+    }
+  });
+}
+
+// ==========================================
+// 14. PLATAFORMAS DEL NIVEL 2
+// ==========================================
+let siguientePlataformaX=430;
+
+function crearPlataformasNivel2(){
+  plataformas=[];
+  siguientePlataformaX=430;
+  generarPlataformasHasta(1600);
+}
+
+function generarPlataformasHasta(limite){
+  while(siguientePlataformaX<limite){
+    const x=siguientePlataformaX;
+    const grupo=Math.floor((x-430)/650)%4;
+
+    if(grupo===0){
+      plataformas.push(
+        {x:x,y:310,ancho:155,alto:16},
+        {x:x+180,y:270,ancho:155,alto:16}
+      );
+    }else if(grupo===1){
+      plataformas.push(
+        {x:x,y:305,ancho:145,alto:16},
+        {x:x+165,y:265,ancho:145,alto:16},
+        {x:x+330,y:295,ancho:145,alto:16}
+      );
+    }else if(grupo===2){
+      plataformas.push({x:x,y:285,ancho:220,alto:16});
+    }else{
+      plataformas.push(
+        {x:x,y:315,ancho:155,alto:16},
+        {x:x+185,y:275,ancho:155,alto:16}
+      );
+    }
+
+    siguientePlataformaX+=650;
+  }
+}
+
+function dibujarPlataformas(){
+  plataformas.forEach(p=>{
+    const x=p.x-camara;
+    if(x+p.ancho<-20||x>W+20)return;
+
+    ctx.fillStyle="#392a22";
+    ctx.fillRect(x+4,p.y+16,p.ancho,3);
+
+    ctx.fillStyle="#72B910";
+    ctx.fillRect(x,p.y,p.ancho,6);
+
+    ctx.fillStyle="#a5df45";
+    ctx.fillRect(x,p.y,p.ancho,2);
+
+    ctx.fillStyle="#75452c";
+    ctx.fillRect(x,p.y+6,p.ancho,10);
+
+    ctx.fillStyle="#9b623c";
+    ctx.fillRect(x+15,p.y+9,25,2);
+    ctx.fillRect(x+65,p.y+12,18,2);
+    ctx.fillRect(x+p.ancho-40,p.y+9,22,2);
+  });
+}
+
+// ==========================================
+// 15. CORAZONES DEL NIVEL 2
+// ==========================================
+let siguienteCorazonX=1800;
+
+function crearCorazon(x,y){
+  corazones.push({x:x,y:y,recogido:false,brillo:0});
+}
+
+function crearCorazonesIniciales(){
+  corazones=[];
+  siguienteCorazonX=1800;
+  crearCorazon(1250,225);
+}
+
+function generarCorazonesHasta(limite){
+  while(siguienteCorazonX<limite){
+    crearCorazon(siguienteCorazonX,235);
+    siguienteCorazonX+=2200;
+  }
+}
+
+function dibujarCorazones(){
+  corazones.forEach(c=>{
+    if(c.recogido)return;
+    c.brillo+=0.08;
+    const x=c.x-camara;
+    const y=c.y+Math.sin(c.brillo)*3;
+    if(x<-30||x>W+30)return;
+
+    ctx.fillStyle="#ff3155";
+    ctx.fillRect(x-10,y-7,8,8);
+    ctx.fillRect(x+2,y-7,8,8);
+    ctx.fillRect(x-14,y-3,28,8);
+    ctx.fillRect(x-10,y+5,20,7);
+    ctx.fillRect(x-6,y+12,12,5);
+    ctx.fillRect(x-2,y+17,4,4);
+
+    ctx.fillStyle="#ff9aaa";
+    ctx.fillRect(x-8,y-5,5,4);
+    ctx.fillRect(x+4,y-5,4,4);
+  });
+}
+
+// ==========================================
+// 16. SALTOS
+// ==========================================
+function saltar(){
+  if(!jugando)return;
+  if(jugador.saltos<2){
+    jugador.velocidadY=FUERZA_SALTO;
+    jugador.suelo=false;
+    jugador.saltos++;
+  }
+}
+
+// ==========================================
+// 17. COLISIONES
+// ==========================================
+function colision(ax,ay,aw,ah,bx,by,bw,bh){
+  return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;
+}
+
+function revisarColisiones(){
+  balas.forEach(b=>{
+    enemigos.forEach(e=>{
+      if(e.estado!=="muerte"&&colision(
+        b.mundoX,b.y,15,5,e.x-18,e.y-85,36,85
+      )){
+        e.estado="muerte";
+        e.indice=0;
+        e.reloj=0;
+        b.mundoX=-1000;
+        jugador.monedas+=2;
+      }
+    });
+  });
+
+  enemigos.forEach(e=>{
+    if(e.estado!=="muerte"&&jugador.invulnerable<=0&&colision(
+      jugador.x+12,jugador.y-jugador.alto+12,40,95,
+      e.x-18,e.y-85,36,85
+    )){
+      jugador.vidas--;
+      jugador.invulnerable=80;
+      e.estado="muerte";
+      e.indice=0;
+      e.reloj=0;
+      if(jugador.vidas<=0)terminar(false);
+    }
+  });
+
+  monedas.forEach(m=>{
+    if(!m.recogida&&colision(
+      jugador.x,jugador.y-jugador.alto,jugador.ancho,jugador.alto,
+      m.x-12,m.y-15,24,30
+    )){
+      m.recogida=true;
+      jugador.monedas++;
+    }
+  });
+
+  if(nivel===2){
+    corazones.forEach(c=>{
+      if(c.recogido)return;
+      if(colision(
+        jugador.x+10,jugador.y-jugador.alto+10,
+        jugador.ancho-20,jugador.alto-15,
+        c.x-16,c.y-4,32,30
+      )){
+        c.recogido=true;
+        if(jugador.vidas<MAX_VIDAS)jugador.vidas++;
+      }
+    });
+  }
+}
+
+// ==========================================
+// 18. FÍSICA Y PLATAFORMAS
+// ==========================================
+function aplicarFisica(){
+  const yAnterior=jugador.y;
+  jugador.velocidadY+=GRAVEDAD;
+  jugador.y+=jugador.velocidadY;
+  jugador.suelo=false;
+
+  if(jugador.y>=365){
+    jugador.y=365;
+    jugador.velocidadY=0;
+    jugador.suelo=true;
+    jugador.saltos=0;
+  }
+
+  if(nivel===2&&jugador.velocidadY>=0){
+    const xIzquierda=jugador.x+8;
+    const xDerecha=jugador.x+jugador.ancho-7;
+
+    plataformas.forEach(p=>{
+      const estabaArriba=yAnterior<=p.y;
+      const cruzoAltura=jugador.y>=p.y;
+      const coincideHorizontal=xDerecha>p.x&&xIzquierda<p.x+p.ancho;
+
+      if(estabaArriba&&cruzoAltura&&coincideHorizontal){
+        jugador.y=p.y;
+        jugador.velocidadY=0;
+        jugador.suelo=true;
+        jugador.saltos=0;
+      }
+    });
+  }
+}
+
+// ==========================================
+// 19. TRANSICIÓN DEL NIVEL 1
+// ==========================================
+function iniciarSecuenciaFinal(){
+  jugando=false;
+  faseFinal="transicion";
+  progresoFinal=0;
+  indiceCelebracion=0;
+  relojCelebracion=0;
+  jugador.velocidadX=4;
+  jugador.velocidadY=0;
+  jugador.suelo=true;
+  disparando=false;
+  cambiarAnimacion("correr");
+  document.getElementById("controles").style.display="none";
+  document.getElementById("ayuda").style.display="none";
+}
+
+function actualizarTransicion(){
+  jugador.velocidadX=4;
+  jugador.suelo=true;
+  cambiarAnimacion("correr");
+  progresoFinal+=1/DURACION_TRANSICION;
+
+  distancia=Math.min(META,INICIO_TRANSICION+
+    progresoFinal*(META-INICIO_TRANSICION));
+
+  document.getElementById("meta").textContent=
+    "RECORRIDO: "+Math.floor(distancia)+" / "+META+" m";
+
+  if(progresoFinal>=1){
+    progresoFinal=1;
+    distancia=META;
+    faseFinal="festejo";
+    indiceCelebracion=0;
+    relojCelebracion=0;
+  }
+}
+
+// ==========================================
+// 20. COMENZAR NIVEL 2
+// ==========================================
+function comenzarNivel2(){
+  nivel=2;
+  faseFinal="ninguna";
+  progresoFinal=0;
+  progresoFinalNivel2=0;
+  relojFinalNivel2=0;
+
+  jugador.x=120;
+  jugador.y=365;
+  jugador.velocidadX=0;
+  jugador.velocidadY=0;
+  jugador.suelo=true;
+  jugador.saltos=0;
+
+  enemigos=[];
+  balas=[];
+  monedas=[];
+
+  crearPlataformasNivel2();
+  crearCorazonesIniciales();
+
+  tiempo=0;
+  distancia=0;
+  camara=0;
+
+  disparando=false;
+  indiceDisparo=0;
+  relojDisparo=0;
+  cambiarAnimacion("quieto");
+
+  document.getElementById("estado").textContent=
+    "❤️ "+jugador.vidas+" | 🪙 "+jugador.monedas;
+
+  document.getElementById("meta").textContent=
+    "NIVEL 2 · META: 820 m";
+
+  document.getElementById("titulo").textContent="¡NIVEL 2!";
+  document.getElementById("mensaje").textContent=
+    "¡Sigue avanzando! Salta entre las plataformas y recoge corazones para recuperar vidas.";
+  document.getElementById("iniciar").textContent="COMENZAR NIVEL 2";
+  document.getElementById("panel").classList.remove("oculto");
+  document.getElementById("controles").style.display="block";
+  document.getElementById("ayuda").style.display="block";
+  jugando=false;
+}
+
+// ==========================================
+// 21. FINAL CINEMATOGRÁFICO DEL NIVEL 2
+// ==========================================
+function iniciarFinalNivel2(){
+  jugando=false;
+
+  faseFinal="transicionNivel2";
+  progresoFinalNivel2=0;
+  relojFinalNivel2=0;
+
+  indiceCelebracion=0;
+  relojCelebracion=0;
+
+  disparando=false;
+  jugador.velocidadX=0;
+  jugador.velocidadY=0;
+
+  document.getElementById("controles").style.display="none";
+  document.getElementById("ayuda").style.display="none";
+}
+
+function actualizarFinalNivel2(){
+  progresoFinalNivel2+=1/100;
+
+  if(progresoFinalNivel2>=1){
+    progresoFinalNivel2=1;
+    faseFinal="festejoNivel2";
+    indiceCelebracion=0;
+    relojCelebracion=0;
+  }
+}
+
+function dibujarTransicionNivel2(){
+  ctx.save();
+
+  if(fondoFinalNivel2.complete&&fondoFinalNivel2.naturalWidth>0){
+    const progreso=Math.min(1,progresoFinalNivel2);
+
+    // Zoom cinematográfico progresivo hacia la imagen del cine.
+    const suavizado=progreso*progreso*(3-2*progreso);
+    const zoom=1+(suavizado*0.32);
+
+    const escala=Math.max(
+      W/fondoFinalNivel2.naturalWidth,
+      H/fondoFinalNivel2.naturalHeight
+    )*zoom;
+
+    const ancho=fondoFinalNivel2.naturalWidth*escala;
+    const alto=fondoFinalNivel2.naturalHeight*escala;
+
+    const x=(W-ancho)/2;
+    const y=(H-alto)/2;
+
+    ctx.drawImage(fondoFinalNivel2,x,y,ancho,alto);
+  }else{
+    ctx.fillStyle="#080b18";
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // Oscurecimiento suave para dar un efecto de escena cinematográfica.
+  const sombra=Math.min(0.35,progresoFinalNivel2*0.35);
+  ctx.fillStyle="rgba(0,0,0,"+sombra+")";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.restore();
+}
+
+function dibujarFestejoNivel2(){
+  // La imagen del cine permanece como escenario final.
+  if(!dibujarImagenCubierta(fondoFinalNivel2)){
+    ctx.fillStyle="#080b18";
+    ctx.fillRect(0,0,W,H);
+  }
+
+  // Animación original de celebración de Tracy.
+  const imagen=spritesCelebracion[indiceCelebracion];
+
+  if(imagen&&imagen.complete&&imagen.naturalWidth>0){
+    const altura=205;
+    const ancho=altura*(imagen.naturalWidth/imagen.naturalHeight);
+    ctx.drawImage(imagen,(W-ancho)/2,H-altura-12,ancho,altura);
+  }
+
+  ctx.save();
+  ctx.textAlign="center";
+  ctx.lineWidth=5;
+  ctx.strokeStyle="#160c26";
+  ctx.fillStyle="#FEE208";
+
+  ctx.font="bold 36px Arial";
+  ctx.strokeText("¡NIVEL 2 COMPLETADO!",W/2,42);
+  ctx.fillText("¡NIVEL 2 COMPLETADO!",W/2,42);
+
+  ctx.font="bold 23px Arial";
+  ctx.strokeText("¡TRACY LLEGÓ A MOVIE TIME!",W/2,78);
+  ctx.fillText("¡TRACY LLEGÓ A MOVIE TIME!",W/2,78);
+
+  ctx.restore();
+}
+
+function actualizarFestejoNivel2(){
+  if(indiceCelebracion<15){
+    relojCelebracion++;
+
+    if(relojCelebracion>=7){
+      relojCelebracion=0;
+      indiceCelebracion++;
+    }
+  }else{
+    relojCelebracion++;
+
+    if(relojCelebracion>35){
+      document.getElementById("titulo").textContent=
+        "¡NIVEL 2 COMPLETADO!";
+      document.getElementById("mensaje").textContent=
+        "¡Tracy llegó a Movie Time! Has completado los 820 metros del segundo nivel de RAVASKA.";
+      document.getElementById("iniciar").textContent="VOLVER A JUGAR";
+      document.getElementById("panel").classList.remove("oculto");
+    }
+  }
+}
+
+// ==========================================
+// 22. ACTUALIZAR EL JUEGO
+// ==========================================
+function actualizar(){
+  if(faseFinal==="transicion"){
+    actualizarTransicion();
+    return;
+  }
+
+  if(faseFinal==="festejo"){
+    if(indiceCelebracion<15){
+      relojCelebracion++;
+      if(relojCelebracion>=7){
+        relojCelebracion=0;
+        indiceCelebracion++;
+      }
+    }else{
+      relojCelebracion++;
+      if(relojCelebracion>20){
+        document.getElementById("titulo").textContent="¡NIVEL 1 COMPLETADO!";
+        document.getElementById("mensaje").textContent=
+          "Tracy llegó al Boulevard. La aventura continúa.";
+        document.getElementById("iniciar").textContent="CONTINUAR AL NIVEL 2";
+        document.getElementById("panel").classList.remove("oculto");
+      }
+    }
+    return;
+  }
+
+  // NUEVAS FASES CINEMATOGRÁFICAS DEL NIVEL 2
+  if(faseFinal==="transicionNivel2"){
+    actualizarFinalNivel2();
+    return;
+  }
+
+  if(faseFinal==="festejoNivel2"){
+    actualizarFestejoNivel2();
+    return;
+  }
+
+  if(!jugando)return;
+
+  tiempo++;
+  distancia+=0.12;
+
+  let moviendo=false;
+
+  if(teclas.ArrowRight||teclas.d||teclas.D){
+    jugador.x+=4;
+    moviendo=true;
+  }
+
+  if(teclas.ArrowLeft||teclas.a||teclas.A){
+    jugador.x=Math.max(0,jugador.x-4);
+    moviendo=true;
+  }
+
+  jugador.velocidadX=moviendo?4:0;
+
+  aplicarFisica();
+  camara=Math.max(0,jugador.x-230);
+
+  if(nivel===2){
+    generarPlataformasHasta(camara+W+1200);
+    generarCorazonesHasta(camara+W+1200);
+    plataformas=plataformas.filter(p=>p.x+p.ancho>camara-200);
+  }
+
+  if(tiempo%150===0)crearVillano();
+  if(tiempo%90===0)crearMoneda();
+
+  enemigos.forEach(e=>{
+    if(e.estado!=="muerte"){
+      if(nivel===2)e.x-=e.velocidad;
+      else{
+        const distanciaJugador=jugador.x-e.x;
+        if(distanciaJugador<-15)e.x-=e.velocidad;
+        else e.x=jugador.x+15;
+      }
+    }
+    animarVillano(e);
+  });
+
+  balas.forEach(b=>b.mundoX+=b.velocidad);
+  revisarColisiones();
+
+  enemigos=enemigos.filter(e=>e.x>camara-100&&e.muerteTiempo===0);
+  balas=balas.filter(b=>b.mundoX>camara-50&&b.mundoX<camara+W+100);
+  monedas=monedas.filter(m=>m.x>camara-100&&!m.recogida);
+  corazones=corazones.filter(c=>c.x>camara-100&&!c.recogido);
+
+  if(jugador.invulnerable>0)jugador.invulnerable--;
+
+  document.getElementById("estado").textContent=
+    "❤️ "+jugador.vidas+" | 🪙 "+jugador.monedas;
+
+  if(nivel===1){
+    document.getElementById("meta").textContent=
+      "RECORRIDO: "+Math.floor(distancia)+" / "+META+" m";
+
+    if(distancia>=INICIO_TRANSICION){
+      distancia=INICIO_TRANSICION;
+      iniciarSecuenciaFinal();
+      return;
+    }
+  }else{
+    document.getElementById("meta").textContent=
+      "NIVEL 2 · RECORRIDO: "+Math.floor(distancia)+" / "+META_NIVEL2+" m";
+
+    if(distancia>=META_NIVEL2){
+      distancia=META_NIVEL2;
+      iniciarFinalNivel2();
+      return;
+    }
+  }
+}
+
+// ==========================================
+// 23. FINAL DEL JUEGO
+// ==========================================
+function terminar(victoria){
+  jugando=false;
+  document.getElementById("titulo").textContent=
+    victoria?"¡LO LOGRASTE!":"¡FIN DE LA AVENTURA!";
+  document.getElementById("mensaje").textContent=
+    "Monedas obtenidas: "+jugador.monedas;
+  document.getElementById("iniciar").textContent="VOLVER A JUGAR";
+  document.getElementById("panel").classList.remove("oculto");
+}
+
+// ==========================================
+// 24. CELEBRACIÓN DEL NIVEL 1
+// ==========================================
+function dibujarFestejoFinal(){
+  if(fondoFinal.complete&&fondoFinal.naturalWidth>0){
+    ctx.drawImage(fondoFinal,0,0,W,H);
+  }else{
+    dibujarFondo();
+  }
+
+  const imagen=spritesCelebracion[indiceCelebracion];
+
+  if(imagen&&imagen.complete&&imagen.naturalWidth>0){
+    const altura=205;
+    const ancho=altura*(imagen.naturalWidth/imagen.naturalHeight);
+    ctx.drawImage(imagen,(W-ancho)/2,H-altura-12,ancho,altura);
+  }
+
+  ctx.save();
+  ctx.textAlign="center";
+  ctx.lineWidth=5;
+  ctx.strokeStyle="#301300";
+  ctx.fillStyle="#FEE208";
+  ctx.font="bold 36px Arial";
+  ctx.strokeText("¡LO LOGRASTE!",W/2,42);
+  ctx.fillText("¡LO LOGRASTE!",W/2,42);
+  ctx.font="bold 19px Arial";
+  ctx.strokeText("¡TRACY LLEGÓ AL BOULEVARD!",W/2,75);
+  ctx.fillText("¡TRACY LLEGÓ AL BOULEVARD!",W/2,75);
+  ctx.restore();
+}
+
+// ==========================================
+// 25. DIBUJAR TODO
+// ==========================================
+function dibujar(){
+  if(faseFinal==="transicion"){
+    dibujarTransicionBoulevard();
+    return;
+  }
+
+  if(faseFinal==="festejo"){
+    dibujarFestejoFinal();
+    return;
+  }
+
+  // NUEVO FINAL CINEMATOGRÁFICO DEL NIVEL 2
+  if(faseFinal==="transicionNivel2"){
+    dibujarTransicionNivel2();
+    return;
+  }
+
+  if(faseFinal==="festejoNivel2"){
+    dibujarFestejoNivel2();
+    return;
+  }
+
+  dibujarFondo();
+
+  if(nivel===2){
+    dibujarPlataformas();
+    dibujarCorazones();
+  }
+
+  dibujarMonedas();
+  enemigos.forEach(dibujarVillano);
+  dibujarMascota();
+
+  if(jugador.invulnerable===0||
+     Math.floor(jugador.invulnerable/5)%2===0){
+    dibujarJugador();
+  }
+
+  dibujarBalas();
+}
+
+// ==========================================
+// 26. BUCLE PRINCIPAL
+// ==========================================
+function bucle(){
+  actualizar();
+  dibujar();
+  requestAnimationFrame(bucle);
+}
+
+// ==========================================
+// 27. INICIAR O CONTINUAR
+// ==========================================
+document.getElementById("iniciar").onclick=()=>{
+  const texto=document.getElementById("iniciar").textContent;
+
+  if(texto==="CONTINUAR AL NIVEL 2"){
+    comenzarNivel2();
+    return;
+  }
+
+  if(texto==="COMENZAR NIVEL 2"){
+    document.getElementById("panel").classList.add("oculto");
+    jugando=true;
+    return;
+  }
+
+  nivel=1;
+  faseFinal="ninguna";
+  progresoFinal=0;
+  progresoFinalNivel2=0;
+  relojFinalNivel2=0;
+  indiceCelebracion=0;
+  relojCelebracion=0;
+
+  reiniciarJugador();
+
+  enemigos=[];
+  balas=[];
+  monedas=[];
+  corazones=[];
+  plataformas=[];
+
+  siguientePlataformaX=430;
+  siguienteCorazonX=1800;
+
+  teclas={};
+  teclaDisparoActiva=false;
+  tiempo=0;
+  distancia=0;
+  camara=0;
+  indiceMascota=0;
+  relojMascota=0;
+  disparando=false;
+  indiceDisparo=0;
+  relojDisparo=0;
+  animacionActual="quieto";
+  indiceAnimacion=0;
+  relojAnimacion=0;
+
+  document.getElementById("estado").textContent="❤️ 3 | 🪙 0";
+  document.getElementById("meta").textContent="NIVEL 1 · META: 820 m";
+  document.getElementById("titulo").textContent="RUMBO AL BOULEVARD";
+  document.getElementById("mensaje").textContent=
+    "Recorre Iquitos, supera a los villanos y llega al Boulevard.";
+  document.getElementById("iniciar").textContent="COMENZAR AVENTURA";
+
+  document.getElementById("controles").style.display="block";
+  document.getElementById("ayuda").style.display="block";
+  jugando=true;
+  document.getElementById("panel").classList.add("oculto");
+};
+
+// ==========================================
+// 28. TECLADO
+// ==========================================
+document.addEventListener("keydown",e=>{
+  teclas[e.key]=true;
+
+  if(e.code==="Space"||e.key==="ArrowUp"){
+    e.preventDefault();
+    if(!e.repeat)saltar();
+  }
+
+  if((e.key==="z"||e.key==="Z")&&!e.repeat&&!teclaDisparoActiva){
+    e.preventDefault();
+    teclaDisparoActiva=true;
+    disparar();
+  }
+});
+
+document.addEventListener("keyup",e=>{
+  teclas[e.key]=false;
+  if(e.key==="z"||e.key==="Z")teclaDisparoActiva=false;
+});
+
+// ==========================================
+// 29. CONTROLES PARA CELULAR
+// ==========================================
+document.getElementById("saltar").onclick=saltar;
+document.getElementById("disparar").onclick=disparar;
+
+function configurarMovimiento(id,tecla){
+  const boton=document.getElementById(id);
+
+  boton.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    teclas[tecla]=true;
+    boton.setPointerCapture(e.pointerId);
+  });
+
+  function detener(){teclas[tecla]=false}
+
+  boton.addEventListener("pointerup",detener);
+  boton.addEventListener("pointercancel",detener);
+  boton.addEventListener("lostpointercapture",detener);
+}
+
+configurarMovimiento("izquierda","ArrowLeft");
+configurarMovimiento("derecha","ArrowRight");
+
+// ==========================================
+// 30. INICIAR
+// ==========================================
+bucle();
+</script>
+</body>
+</html>

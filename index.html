@@ -1,0 +1,1024 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c120b">
+<meta name="description" content="RAVASKA: una aventura pixel art inspirada en Iquitos.">
+<title>RAVASKA | Una aventura por Iquitos</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --verde:#72B910;
+  --celeste:#66B4FC;
+  --amarillo:#FEE208;
+  --negro:#000000;
+  --naranja:#FF9F0A;
+  --fondo:#0c120b;
+  --tarjeta:#151f14;
+  --texto:#b0c2a8;
+}
+
+* {
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html {
+  scroll-behavior:smooth;
+  scroll-padding-top:85px;
+}
+
+body {
+  background:var(--fondo);
+  color:white;
+  font-family:'Rajdhani',sans-serif;
+  line-height:1.6;
+}
+
+img {
+  max-width:100%;
+  display:block;
+}
+
+a {
+  color:inherit;
+  text-decoration:none;
+}
+
+.container {
+  width:min(1160px,90%);
+  margin:auto;
+}
+
+/* NAVEGACIÓN */
+
+header {
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:rgba(5,10,5,.96);
+  border-bottom:3px solid var(--verde);
+}
+
+.nav {
+  min-height:76px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.brand img {
+  width:52px;
+  height:52px;
+  object-fit:contain;
+  image-rendering:pixelated;
+}
+
+.brand strong {
+  font:15px 'Press Start 2P';
+}
+
+.brand span {
+  color:var(--amarillo);
+}
+
+.navlinks {
+  display:flex;
+  align-items:center;
+  gap:24px;
+}
+
+.navlinks a {
+  font-size:18px;
+  font-weight:700;
+  transition:.2s;
+}
+
+.navlinks a:hover {
+  color:var(--amarillo);
+}
+
+.navlinks .navplay {
+  background:var(--verde);
+  color:#071000;
+  padding:12px;
+  border:2px solid black;
+  box-shadow:4px 4px var(--amarillo);
+  font:10px 'Press Start 2P';
+}
+
+.menu {
+  display:none;
+  border:0;
+  background:none;
+  color:var(--amarillo);
+  font-size:30px;
+  cursor:pointer;
+}
+
+/* PORTADA */
+
+.hero {
+  min-height:680px;
+  display:flex;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+  background:#101b14;
+}
+
+.hero-bg {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  image-rendering:pixelated;
+}
+
+.hero::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    90deg,
+    rgba(5,12,7,.96),
+    rgba(5,12,7,.75),
+    rgba(5,12,7,.15)
+  );
+  z-index:1;
+}
+
+.hero-content {
+  position:relative;
+  z-index:2;
+  max-width:720px;
+  padding:100px 0;
+}
+
+.eyebrow {
+  display:inline-block;
+  color:var(--verde);
+  border:1px solid var(--verde);
+  padding:8px 13px;
+  font-weight:700;
+  letter-spacing:2px;
+}
+
+h1 {
+  font:clamp(27px,5vw,53px)/1.4 'Press Start 2P';
+  color:var(--amarillo);
+  margin:25px 0;
+  text-shadow:5px 5px #17240b;
+}
+
+.hero p {
+  color:#e0ebdc;
+  font-size:clamp(19px,2.2vw,25px);
+  margin-bottom:28px;
+}
+
+.actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px;
+}
+
+.btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px 20px;
+  font:10px 'Press Start 2P';
+  border:3px solid black;
+  transition:.2s;
+  cursor:pointer;
+}
+
+.btn:hover {
+  transform:translateY(-4px);
+}
+
+.primary {
+  background:var(--verde);
+  color:#081000;
+  box-shadow:5px 5px var(--amarillo);
+}
+
+.secondary {
+  color:var(--celeste);
+  border-color:var(--celeste);
+  box-shadow:5px 5px black;
+}
+
+.chips {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:35px;
+}
+
+.chips span {
+  background:#111e15;
+  border:1px solid #34512a;
+  padding:7px 12px;
+  color:#d9ebd1;
+  font-weight:700;
+}
+
+/* SECCIONES GENERALES */
+
+section {
+  padding:85px 0;
+}
+
+.section-head {
+  text-align:center;
+  max-width:760px;
+  margin:0 auto 45px;
+}
+
+.kicker {
+  font:10px 'Press Start 2P';
+  color:var(--verde);
+}
+
+h2 {
+  font:clamp(19px,3vw,29px)/1.6 'Press Start 2P';
+  color:var(--amarillo);
+  margin:15px 0;
+}
+
+.section-head p {
+  color:var(--texto);
+  font-size:20px;
+}
+
+/* SOBRE RAVASKA */
+
+.about-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:45px;
+  align-items:center;
+}
+
+.image-frame {
+  padding:10px;
+  background:#172516;
+  border:3px solid var(--verde);
+  box-shadow:9px 9px black;
+}
+
+.image-frame img {
+  width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  image-rendering:pixelated;
+}
+
+.about-copy p {
+  color:var(--texto);
+  font-size:20px;
+  margin-top:15px;
+}
+
+/* CARACTERÍSTICAS */
+
+.features {
+  background:#101a10;
+  border-block:1px solid #243820;
+}
+
+.cards {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+}
+
+.card {
+  background:var(--tarjeta);
+  border:2px solid #2a4022;
+  padding:25px;
+  min-height:205px;
+  transition:.2s;
+}
+
+.card:hover {
+  transform:translateY(-6px);
+  border-color:var(--verde);
+}
+
+.card .emoji {
+  font-size:35px;
+}
+
+.card h3 {
+  color:var(--celeste);
+  font:11px/1.8 'Press Start 2P';
+  margin:18px 0 10px;
+}
+
+.card p {
+  color:var(--texto);
+  font-size:18px;
+}
+
+/* UNIVERSO */
+
+.world-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:22px;
+}
+
+.world-item {
+  position:relative;
+  min-height:250px;
+  overflow:hidden;
+  border:2px solid #31452a;
+}
+
+.world-item img {
+  width:100%;
+  height:100%;
+  position:absolute;
+  inset:0;
+  object-fit:cover;
+  image-rendering:pixelated;
+  transition:.3s;
+}
+
+.world-item:hover img {
+  transform:scale(1.05);
+}
+
+.world-item::after {
+  content:"";
+  position:absolute;
+  inset:35% 0 0;
+  background:linear-gradient(transparent,rgba(0,0,0,.95));
+}
+
+.world-label {
+  position:absolute;
+  bottom:18px;
+  left:20px;
+  z-index:2;
+}
+
+.world-label strong {
+  color:var(--amarillo);
+  font:11px 'Press Start 2P';
+}
+
+.world-label p {
+  color:white;
+  font-size:17px;
+  margin-top:8px;
+}
+
+/* GALERÍA */
+
+.gallery {
+  background:#101a10;
+}
+
+.gallery-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+
+.gallery-grid img {
+  width:100%;
+  aspect-ratio:1;
+  object-fit:contain;
+  background:#1b281a;
+  border:2px solid #31452a;
+  padding:8px;
+  image-rendering:pixelated;
+}
+
+.gallery-grid img:first-child {
+  grid-column:span 2;
+  grid-row:span 2;
+}
+
+/* META */
+
+.goal {
+  background:linear-gradient(120deg,#172b13,#0c120b);
+  border-block:3px solid var(--naranja);
+}
+
+.goal-grid {
+  display:grid;
+  grid-template-columns:1fr 1.1fr;
+  gap:35px;
+  align-items:center;
+}
+
+.goal h2 {
+  color:var(--naranja);
+}
+
+.goal p {
+  color:var(--texto);
+  font-size:20px;
+  margin-top:15px;
+}
+
+.goal img {
+  width:100%;
+  border:3px solid var(--naranja);
+  image-rendering:pixelated;
+}
+
+/* JUGAR */
+
+.playbox {
+  text-align:center;
+  background:var(--tarjeta);
+  border:3px solid var(--verde);
+  padding:55px 24px;
+  box-shadow:9px 9px black;
+}
+
+.playbox p {
+  color:var(--texto);
+  font-size:20px;
+  max-width:650px;
+  margin:15px auto 28px;
+}
+
+.note {
+  font-size:14px !important;
+  color:#83927d !important;
+}
+
+/* PIE DE PÁGINA */
+
+footer {
+  padding:38px 0 22px;
+  background:#050805;
+  border-top:3px solid var(--verde);
+}
+
+.footer-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:25px;
+  flex-wrap:wrap;
+}
+
+.footer-brand {
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.footer-brand img {
+  width:48px;
+  height:48px;
+  object-fit:contain;
+}
+
+.footer-brand strong {
+  font:12px 'Press Start 2P';
+}
+
+footer p {
+  color:#9cad94;
+  margin-top:8px;
+}
+
+.footer-links {
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+}
+
+.footer-links a {
+  color:#d7e4d1;
+}
+
+.copyright {
+  text-align:center;
+  border-top:1px solid #243220;
+  margin-top:25px;
+  padding-top:18px;
+  color:#788675;
+  font-size:14px;
+}
+
+/* ADAPTACIÓN A TABLETS Y CELULARES */
+
+@media(max-width:800px) {
+  .menu {
+    display:block;
+  }
+
+  .navlinks {
+    display:none;
+    position:absolute;
+    top:76px;
+    left:0;
+    right:0;
+    background:#081008;
+    padding:22px 5%;
+    flex-direction:column;
+    align-items:flex-start;
+    border-bottom:2px solid var(--verde);
+  }
+
+  .navlinks.open {
+    display:flex;
+  }
+
+  .about-grid,
+  .goal-grid {
+    grid-template-columns:1fr;
+  }
+
+  .cards {
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .hero {
+    min-height:620px;
+  }
+
+  .hero::before {
+    background:linear-gradient(
+      90deg,
+      rgba(5,12,7,.94),
+      rgba(5,12,7,.58)
+    );
+  }
+}
+
+@media(max-width:520px) {
+  section {
+    padding:65px 0;
+  }
+
+  .cards,
+  .world-grid {
+    grid-template-columns:1fr;
+  }
+
+  .gallery-grid {
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .gallery-grid img:first-child {
+    grid-column:span 2;
+    grid-row:auto;
+    aspect-ratio:16/9;
+  }
+
+  .hero-content {
+    padding:80px 0 60px;
+  }
+
+  .btn {
+    font-size:9px;
+    padding:14px 15px;
+  }
+
+  .brand strong {
+    font-size:12px;
+  }
+
+  .footer-row {
+    flex-direction:column;
+    align-items:flex-start;
+  }
+}
+</style>
+
+<style id="ravaska-responsive-fix">
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+img, picture, video, canvas, svg{max-width:100%}
+img{height:auto}
+.hero{min-height:clamp(500px,78vh,760px)}
+.hero-bg{height:100%;width:100%;object-fit:cover}
+.container{width:min(1160px,92%)}
+@media(max-width:760px){.container{width:92%}.hero{min-height:590px}.hero-content{padding:76px 0}.nav{gap:10px}.brand strong{font-size:clamp(10px,2.8vw,15px)}.brand img{width:42px;height:42px}.navlinks{gap:12px}.navlinks a{font-size:15px}.btn{font-size:9px;padding:14px 12px}.actions{gap:12px}}
+@media(max-width:480px){.hero{min-height:560px}.hero-content{padding:58px 0}.nav{min-height:64px}.brand{gap:7px}.brand img{width:36px;height:36px}.brand strong{font-size:9px}.menu{font-size:27px}.navlinks{gap:8px}.navlinks a{font-size:13px}.navlinks .navplay{font-size:8px;padding:9px}.btn{width:100%;min-height:48px;font-size:8px}.actions{width:100%}h1{overflow-wrap:anywhere}}
+</style>
+</head>
+
+<body>
+
+<!-- MENÚ PRINCIPAL -->
+<header>
+  <div class="container nav">
+
+    <a class="brand" href="#inicio">
+      <img src="assets/logo-ravaska.webp" alt="Logo RAVASKA">
+      <strong>RAVASKA<span>.</span></strong>
+    </a>
+
+    <button class="menu" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
+      ☰
+    </button>
+
+    <nav class="navlinks" id="navLinks">
+      <a href="#inicio">Inicio</a>
+      <a href="#juego">El juego</a>
+      <a href="#universo">Universo</a>
+      <a href="#galeria">Galería</a>
+      <a href="#meta">La meta</a>
+      <a class="navplay" href="#jugar">JUGAR</a>
+    </nav>
+
+  </div>
+</header>
+
+<main>
+
+<!-- PORTADA -->
+<section class="hero" id="inicio">
+
+  <img
+    class="hero-bg"
+    src="assets/portada-ravaska.webp"
+    alt="Portada de RAVASKA"
+  >
+
+  <div class="container">
+    <div class="hero-content">
+
+      <span class="eyebrow">
+        VIDEOJUEGO · AVENTURA PIXEL ART
+      </span>
+
+      <h1>¡IQUITOS ES TU ESCENARIO!</h1>
+
+      <p>
+        Corre, salta y supera cada desafío en una aventura
+        inspirada en las calles y paisajes de la Amazonía.
+      </p>
+
+      <div class="actions">
+        <a class="btn primary" href="#jugar">
+          DESCUBRE RAVASKA
+        </a>
+
+        <a class="btn secondary" href="#juego">
+          CONOCE EL JUEGO
+        </a>
+      </div>
+
+      <div class="chips">
+        <span>2D PIXEL ART</span>
+        <span>ACCIÓN</span>
+        <span>INSPIRADO EN IQUITOS</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SOBRE EL JUEGO -->
+<section id="juego">
+  <div class="container about-grid">
+
+    <div class="image-frame">
+      <img
+        src="assets/iglesia-iquitos.webp"
+        alt="Escenario inspirado en Iquitos"
+        loading="lazy"
+      >
+    </div>
+
+    <div class="about-copy">
+      <span class="kicker">CONOCE LA AVENTURA</span>
+
+      <h2>MÁS QUE UN JUEGO, UNA AVENTURA AMAZÓNICA.</h2>
+
+      <p>
+        RAVASKA es un videojuego de aventura, acción y plataformas
+        en 2D. Acompaña a la protagonista en un recorrido por
+        escenarios inspirados en Iquitos.
+      </p>
+
+      <p>
+        Corre, salta, esquiva obstáculos, enfréntate a enemigos
+        y recoge monedas mientras avanzas hacia tu destino.
+      </p>
+
+      <p>
+        Una experiencia con estética pixel art que lleva la
+        identidad de nuestra ciudad al mundo de los videojuegos.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- CARACTERÍSTICAS -->
+<section class="features">
+  <div class="container">
+
+    <div class="section-head">
+      <span class="kicker">¿QUÉ TE ESPERA?</span>
+      <h2>SUPERA CADA DESAFÍO</h2>
+      <p>
+        Avanza por el recorrido, usa tus habilidades
+        y mantente alerta para llegar a tu destino.
+      </p>
+    </div>
+
+    <div class="cards">
+
+      <article class="card">
+        <div class="emoji">🏃‍♀️</div>
+        <h3>RECORRE</h3>
+        <p>Explora escenarios urbanos inspirados en Iquitos.</p>
+      </article>
+
+      <article class="card">
+        <div class="emoji">⬆️</div>
+        <h3>SALTA Y ESQUIVA</h3>
+        <p>Evita los obstáculos que aparecen en tu camino.</p>
+      </article>
+
+      <article class="card">
+        <div class="emoji">⚡</div>
+        <h3>ENFRÉNTATE</h3>
+        <p>Supera los desafíos y enemigos del recorrido.</p>
+      </article>
+
+      <article class="card">
+        <div class="emoji">🪙</div>
+        <h3>RECOGE MONEDAS</h3>
+        <p>Consigue monedas mientras avanzas por la aventura.</p>
+      </article>
+
+      <article class="card">
+        <div class="emoji">❤️</div>
+        <h3>CUIDA TUS VIDAS</h3>
+        <p>Evita los golpes y continúa avanzando.</p>
+      </article>
+
+      <article class="card">
+        <div class="emoji">🏁</div>
+        <h3>LLEGA A LA META</h3>
+        <p>Completa el recorrido y alcanza el Boulevard.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- UNIVERSO -->
+<section id="universo">
+  <div class="container">
+
+    <div class="section-head">
+      <span class="kicker">EL MUNDO DE RAVASKA</span>
+      <h2>UNA CIUDAD, MUCHAS AVENTURAS</h2>
+      <p>
+        Un universo visual inspirado en el entorno
+        urbano y amazónico de Iquitos.
+      </p>
+    </div>
+
+    <div class="world-grid">
+
+      <article class="world-item">
+        <img
+          src="assets/iglesia-iquitos.webp"
+          alt="Referencia visual de Iquitos"
+          loading="lazy"
+        >
+        <div class="world-label">
+          <strong>ESCENARIOS DE IQUITOS</strong>
+          <p>Lugares y espacios que inspiran el recorrido.</p>
+        </div>
+      </article>
+
+      <article class="world-item">
+        <img
+          src="assets/portada-ravaska.webp"
+          alt="Arte de portada de RAVASKA"
+          loading="lazy"
+        >
+        <div class="world-label">
+          <strong>AVENTURA PIXEL ART</strong>
+          <p>Un mundo de plataformas y acción en 2D.</p>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- GALERÍA -->
+<section class="gallery" id="galeria">
+  <div class="container">
+
+    <div class="section-head">
+      <span class="kicker">PERSONAJE Y RECURSOS</span>
+      <h2>ASÍ COBRA VIDA RAVASKA</h2>
+      <p>
+        Una mirada a los recursos gráficos del personaje
+        y la identidad visual del juego.
+      </p>
+    </div>
+
+    <div class="gallery-grid">
+
+      <img src="assets/portada-ravaska.webp"
+           alt="Portada de RAVASKA" loading="lazy">
+
+      <img src="assets/sprite0.webp"
+           alt="Sprite del personaje 1" loading="lazy">
+
+      <img src="assets/sprite1.webp"
+           alt="Sprite del personaje 2" loading="lazy">
+
+      <img src="assets/sprite2.webp"
+           alt="Sprite del personaje 3" loading="lazy">
+
+      <img src="assets/sprite3.webp"
+           alt="Sprite del personaje 4" loading="lazy">
+
+      <img src="assets/sprite4.webp"
+           alt="Sprite del personaje 5" loading="lazy">
+
+      <img src="assets/sprite5.webp"
+           alt="Sprite del personaje 6" loading="lazy">
+
+      <img src="assets/sprite6.webp"
+           alt="Sprite del personaje 7" loading="lazy">
+
+      <img src="assets/sprite7.webp"
+           alt="Sprite del personaje 8" loading="lazy">
+
+      <img src="assets/sprite8.webp"
+           alt="Sprite del personaje 9" loading="lazy">
+
+      <img src="assets/sprite9.webp"
+           alt="Sprite del personaje 10" loading="lazy">
+
+      <img src="assets/sprite10.webp"
+           alt="Sprite del personaje 11" loading="lazy">
+
+      <img src="assets/sprite11.webp"
+           alt="Sprite del personaje 12" loading="lazy">
+
+      <img src="assets/sprite12.webp"
+           alt="Sprite del personaje 13" loading="lazy">
+
+      <img src="assets/sprite13.webp"
+           alt="Sprite del personaje 14" loading="lazy">
+
+      <img src="assets/sprite14.webp"
+           alt="Sprite del personaje 15" loading="lazy">
+
+      <img src="assets/sprite15.webp"
+           alt="Sprite del personaje 16" loading="lazy">
+
+    </div>
+  </div>
+</section>
+
+<!-- META -->
+<section class="goal" id="meta">
+  <div class="container goal-grid">
+
+    <div>
+      <span class="kicker">EL DESTINO FINAL</span>
+
+      <h2>¡EL BOULEVARD TE ESPERA!</h2>
+
+      <p>
+        La aventura tiene un objetivo: superar el recorrido
+        y llegar al Boulevard de Iquitos.
+      </p>
+
+      <p>
+        La meta representa el cierre de esta travesía
+        por una ciudad llena de vida.
+      </p>
+    </div>
+
+    <img
+      src="assets/portada-ravaska.webp"
+      alt="Arte de RAVASKA"
+      loading="lazy"
+    >
+
+  </div>
+</section>
+
+<!-- LLAMADA A LA ACCIÓN -->
+<section id="jugar">
+  <div class="container">
+
+    <div class="playbox">
+      <span class="kicker">¿LISTA PARA LA AVENTURA?</span>
+
+      <h2>EL RECORRIDO COMIENZA AQUÍ</h2>
+
+      <p>
+        Prepárate para correr, saltar, superar obstáculos
+        y descubrir Iquitos desde una nueva perspectiva.
+      </p>
+
+      <!-- CAMBIA juego/index.html POR LA RUTA REAL DE TU VIDEOJUEGO -->
+      <a class="btn primary" href="juego/index.html">
+        JUGAR RAVASKA
+      </a>
+
+      <p class="note">
+        ¡Tu aventura por Iquitos te espera!
+      </p>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<!-- PIE DE PÁGINA -->
+<footer>
+  <div class="container">
+
+    <div class="footer-row">
+
+      <div>
+        <div class="footer-brand">
+          <img src="assets/logo-ravaska.webp" alt="RAVASKA">
+          <strong>RAVASKA</strong>
+        </div>
+
+        <p>Una aventura con identidad amazónica.</p>
+      </div>
+
+      <div class="footer-links">
+        <a href="#inicio">Inicio</a>
+        <a href="#juego">El juego</a>
+        <a href="#galeria">Galería</a>
+        <a href="#meta">La meta</a>
+      </div>
+
+    </div>
+
+    <div class="copyright">
+      © <span id="year"></span> RAVASKA. Todos los derechos reservados.
+    </div>
+
+  </div>
+</footer>
+
+<script>
+/* MENÚ PARA CELULARES */
+
+const menuToggle = document.getElementById("menuToggle");
+const navLinks = document.getElementById("navLinks");
+
+menuToggle.addEventListener("click", function() {
+  const abierto = navLinks.classList.toggle("open");
+  menuToggle.setAttribute("aria-expanded", abierto);
+  menuToggle.textContent = abierto ? "✕" : "☰";
+});
+
+/* CERRAR MENÚ AL ELEGIR UNA SECCIÓN */
+
+document.querySelectorAll(".navlinks a").forEach(function(enlace) {
+  enlace.addEventListener("click", function() {
+    navLinks.classList.remove("open");
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.textContent = "☰";
+  });
+});
+
+/* AÑO AUTOMÁTICO */
+
+document.getElementById("year").textContent =
+  new Date().getFullYear();
+</script>
+
+</body>
+</html>
