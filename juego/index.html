@@ -82,50 +82,50 @@ function cargarImagen(ruta){
   return img;
 }
 
-const fondo=cargarImagen("fondo_original.webp");
-const fondoNivel2=cargarImagen("../assets/fondo-nivel2.webp");
-const fondoEntrada=cargarImagen("../assets/boulevard-final.webp");
-const fondoFinal=cargarImagen("../assets/boulevard-meta-final-nivel1.webp");
+const fondo=cargarImagen("fondo_original.png");
+const fondoNivel2=cargarImagen("../assets/fondo-nivel2.png");
+const fondoEntrada=cargarImagen("../assets/boulevard-final.png");
+const fondoFinal=cargarImagen("../assets/boulevard-meta-final-nivel1.png");
 
 // NUEVA IMAGEN DE LA META DEL NIVEL 2
-const fondoFinalNivel2=cargarImagen("../assets/Cine-meta-final-nivel2.webp");
+const fondoFinalNivel2=cargarImagen("../assets/Cine-meta-final-nivel2.png");
 
 const spritesCelebracion=[];
-for(let i=0;i<16;i++)spritesCelebracion.push(cargarImagen("../assets/celebracion"+i+".webp"));
+for(let i=0;i<16;i++)spritesCelebracion.push(cargarImagen("../assets/celebracion"+i+".png"));
 
 const mascotas=[];
-for(let i=0;i<15;i++)mascotas.push(cargarImagen("../assets/sprite-mascota"+i+".webp"));
+for(let i=0;i<15;i++)mascotas.push(cargarImagen("../assets/sprite-mascota"+i+".png"));
 
 const villanoImagenes={
-  quieto:cargarImagen("../assets/villano-sprite0.webp"),
+  quieto:cargarImagen("../assets/villano-sprite0.png"),
   correr:[
-    cargarImagen("../assets/villano-sprite-corriendo1.webp"),
-    cargarImagen("../assets/villano-sprite-corriendo2.webp"),
-    cargarImagen("../assets/villano-sprite-corriendo3.webp")
+    cargarImagen("../assets/villano-sprite-corriendo1.png"),
+    cargarImagen("../assets/villano-sprite-corriendo2.png"),
+    cargarImagen("../assets/villano-sprite-corriendo3.png")
   ],
   saltar:[
-    cargarImagen("../assets/villano-sprite-saltando1.webp"),
-    cargarImagen("../assets/villano-sprite-saltando2.webp")
+    cargarImagen("../assets/villano-sprite-saltando1.png"),
+    cargarImagen("../assets/villano-sprite-saltando2.png")
   ],
   herido:[
-    cargarImagen("../assets/villano-sprite-herido1.webp"),
-    cargarImagen("../assets/villano-sprite-herido2.webp")
+    cargarImagen("../assets/villano-sprite-herido1.png"),
+    cargarImagen("../assets/villano-sprite-herido2.png")
   ],
   muerte:[
-    cargarImagen("../assets/villano-sprite-muerte1.webp"),
-    cargarImagen("../assets/villano-sprite-muerte2.webp"),
-    cargarImagen("../assets/villano-sprite-muerte3.webp"),
-    cargarImagen("../assets/villano-sprite-muerte4.webp"),
-    cargarImagen("../assets/villano-sprite-muerte5.webp")
+    cargarImagen("../assets/villano-sprite-muerte1.png"),
+    cargarImagen("../assets/villano-sprite-muerte2.png"),
+    cargarImagen("../assets/villano-sprite-muerte3.png"),
+    cargarImagen("../assets/villano-sprite-muerte4.png"),
+    cargarImagen("../assets/villano-sprite-muerte5.png")
   ]
 };
 
-const imagenMoneda=cargarImagen("../assets/moneda-sprite.webp");
+const imagenMoneda=cargarImagen("../assets/moneda-sprite.png");
 const sprites=[];
-for(let i=0;i<16;i++)sprites.push(cargarImagen("sprites/sprite"+i+".webp"));
+for(let i=0;i<16;i++)sprites.push(cargarImagen("sprites/sprite"+i+".png"));
 
 const spritesDisparo=[];
-for(let i=0;i<4;i++)spritesDisparo.push(cargarImagen("../assets/disparo"+i+".webp"));
+for(let i=0;i<4;i++)spritesDisparo.push(cargarImagen("../assets/disparo"+i+".png"));
 
 // ==========================================
 // 3. ANIMACIONES DE TRACY
@@ -205,6 +205,8 @@ let indiceCelebracion=0,relojCelebracion=0;
 // VARIABLES EXCLUSIVAS DEL FINAL DEL NIVEL 2
 let progresoFinalNivel2=0;
 let relojFinalNivel2=0;
+
+const ALTURA_SUELO_NIVEL2=415;
 
 let enemigos=[],balas=[],monedas=[],corazones=[],plataformas=[];
 let teclas={},teclaDisparoActiva=false;
@@ -366,7 +368,7 @@ function dibujarTransicionBoulevard(){
 function crearVillano(){
   let posicionX=nivel===2?camara+W+70:jugador.x+550;
   enemigos.push({
-    x:posicionX,y:365,
+    x:posicionX,y:nivel===2?ALTURA_SUELO_NIVEL2:365,
     velocidad:nivel===2?3.2:2,
     estado:"correr",indice:0,reloj:0,muerteTiempo:0
   });
@@ -662,12 +664,21 @@ function aplicarFisica(){
   jugador.y+=jugador.velocidadY;
   jugador.suelo=false;
 
+  if(nivel===2){
+  if(jugador.y>=ALTURA_SUELO_NIVEL2){
+    jugador.y=ALTURA_SUELO_NIVEL2;
+    jugador.velocidadY=0;
+    jugador.suelo=true;
+    jugador.saltos=0;
+  }
+}else{
   if(jugador.y>=365){
     jugador.y=365;
     jugador.velocidadY=0;
     jugador.suelo=true;
     jugador.saltos=0;
   }
+}
 
   if(nivel===2&&jugador.velocidadY>=0){
     const xIzquierda=jugador.x+8;
